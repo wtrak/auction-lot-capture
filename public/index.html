@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Auction Lot Capture</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="card header-card">
+      <div>
+        <p class="eyebrow">Current lot</p>
+        <h1 id="locator">Loading...</h1>
+      </div>
+      <div class="counter">
+        <span id="photoCount">0</span>
+        <small>photos</small>
+      </div>
+    </section>
+
+    <section class="card">
+      <video id="camera" autoplay playsinline muted></video>
+      <canvas id="canvas" hidden></canvas>
+      <div class="controls">
+        <button id="captureBtn" class="primary">Take Photo</button>
+        <button id="undoBtn" disabled>Undo Last</button>
+      </div>
+      <input id="fileInput" type="file" accept="image/*" capture="environment" multiple />
+      <p class="hint">If live camera does not open, use the file picker above.</p>
+    </section>
+
+    <section class="card preview-card">
+      <div class="preview-header">
+        <strong>Photos for this lot</strong>
+        <span id="status"></span>
+      </div>
+      <div id="preview" class="preview"></div>
+    </section>
+
+    <section class="submit-bar">
+      <button id="submitBtn" class="submit" disabled>Submit Lot</button>
+    </section>
+
+    <details class="card settings">
+      <summary>Manual locator override</summary>
+      <p>Use this only if you need to correct the next lot code.</p>
+      <div class="override-row">
+        <input id="overrideInput" placeholder="Example: D42" />
+        <button id="overrideBtn">Set Next</button>
+      </div>
+    </details>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
