@@ -1,0 +1,10 @@
+{
+  "name": "Auction Lot Capture",
+  "short_name": "Lot Capture",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef1f5",
+  "theme_color": "#111827",
+  "orientation": "landscape",
+  "icons": []
+}
