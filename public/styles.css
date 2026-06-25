@@ -5,7 +5,8 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; }
+html, body { min-height: 100%; }
+body { margin: 0; background: #eef1f5; }
 
 .app {
   width: min(720px, 100%);
@@ -26,6 +27,7 @@ body { margin: 0; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .eyebrow {
@@ -51,6 +53,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
 }
 
 .counter span {
@@ -66,6 +69,7 @@ video {
   background: #111827;
   border-radius: 14px;
   object-fit: cover;
+  aspect-ratio: 16 / 9;
 }
 
 .controls, .override-row {
@@ -73,6 +77,10 @@ video {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 12px;
+}
+
+.controls {
+  grid-template-columns: 1.2fr 1fr 1fr;
 }
 
 button, input::file-selector-button {
@@ -149,12 +157,32 @@ button.submit {
   min-height: 80px;
 }
 
+.preview-item {
+  position: relative;
+}
+
+.preview-item span {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.85);
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
 .preview img {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 10px;
   background: #f3f4f6;
+  display: block;
 }
 
 .settings summary {
@@ -172,4 +200,173 @@ input {
   border-radius: 14px;
   padding: 13px;
   font-size: 17px;
+}
+
+.portrait-warning {
+  display: none;
+  position: fixed;
+  z-index: 20;
+  left: 12px;
+  right: 12px;
+  top: calc(10px + env(safe-area-inset-top));
+  padding: 12px 14px;
+  background: #111827;
+  color: white;
+  border-radius: 16px;
+  text-align: center;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+body.is-portrait .portrait-warning {
+  display: block;
+}
+
+@media (orientation: landscape) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app {
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 10px;
+    padding-left: calc(10px + env(safe-area-inset-left));
+    padding-right: calc(10px + env(safe-area-inset-right));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+
+  .card {
+    margin: 0;
+    border-radius: 16px;
+    padding: 10px;
+  }
+
+  .camera-card {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  video {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+  }
+
+  .header-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  h1 {
+    font-size: clamp(40px, 7vw, 68px);
+  }
+
+  .counter {
+    width: 78px;
+    height: 78px;
+  }
+
+  .counter span {
+    font-size: 30px;
+  }
+
+  .preview-card {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    grid-template-columns: repeat(2, 1fr);
+    align-content: start;
+    padding-right: 2px;
+  }
+
+  .submit-bar {
+    grid-column: 2;
+    grid-row: 3;
+    position: static;
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .submit-bar button {
+    max-width: none;
+  }
+
+  .settings {
+    display: none;
+  }
+
+  .controls {
+    grid-template-columns: 1.2fr 1fr 1fr;
+    margin-top: 10px;
+  }
+
+  button, input::file-selector-button {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  #fileInput, .hint {
+    margin-top: 8px;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  .eyebrow, .hint, #status {
+    font-size: 12px;
+  }
+
+  h1 {
+    font-size: 40px;
+  }
+
+  .counter {
+    width: 64px;
+    height: 64px;
+  }
+
+  .counter span {
+    font-size: 24px;
+  }
+
+  .controls {
+    gap: 8px;
+  }
+
+  button, input, input::file-selector-button {
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 14px;
+  }
 }
