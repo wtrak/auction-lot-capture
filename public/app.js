@@ -10,7 +10,6 @@ const preview = document.getElementById('preview');
 const fileInput = document.getElementById('fileInput');
 const overrideInput = document.getElementById('overrideInput');
 const overrideBtn = document.getElementById('overrideBtn');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 const JPEG_QUALITY = 0.96;
 const MAX_OUTPUT_WIDTH = 2560;
@@ -23,7 +22,6 @@ let uploading = false;
 
 async function init() {
   await loadState();
-  updateOrientationState();
   await startCamera();
   render();
 }
@@ -37,33 +35,36 @@ async function loadState() {
 
 async function startCamera() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    statusEl.textContent = 'Camera not available. Use the file picker.';
+    statusEl.textContent = 'Camera not available. Use More options.';
     return;
   }
 
   try {
     if (stream) stream.getTracks().forEach((track) => track.stop());
 
+    const preferredConstraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 2560 },
+        height: { ideal: 1440 },
+        aspectRatio: { ideal: LANDSCAPE_RATIO },
+      },
+      audio: false,
+    };
+
+    const fallbackConstraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+      audio: false,
+    };
+
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 2560 },
-          height: { ideal: 1440 },
-          aspectRatio: { ideal: LANDSCAPE_RATIO },
-        },
-        audio: false,
-      });
+      stream = await navigator.mediaDevices.getUserMedia(preferredConstraints);
     } catch {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          aspectRatio: { ideal: LANDSCAPE_RATIO },
-        },
-        audio: false,
-      });
+      stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
     }
 
     camera.srcObject = stream;
@@ -73,31 +74,17 @@ async function startCamera() {
     const settings = track?.getSettings ? track.getSettings() : {};
     const width = settings.width || camera.videoWidth;
     const height = settings.height || camera.videoHeight;
-    statusEl.textContent = width && height ? `Camera ready ${width}×${height}` : 'Camera ready';
+    statusEl.textContent = width && height ? `Ready ${width}×${height}` : 'Camera ready';
   } catch (error) {
-    statusEl.textContent = 'Use file picker if camera is blocked';
+    statusEl.textContent = 'Use More options if camera is blocked';
   }
-}
-
-function isLandscape() {
-  return window.matchMedia('(orientation: landscape)').matches || window.innerWidth > window.innerHeight;
-}
-
-function updateOrientationState() {
-  const landscape = isLandscape();
-  document.body.classList.toggle('is-portrait', !landscape);
-  if (!landscape && !uploading) {
-    statusEl.textContent = 'Rotate phone sideways before taking photos';
-  }
-  render();
 }
 
 function render() {
   locatorEl.textContent = currentLocator || '—';
   photoCountEl.textContent = photos.length;
 
-  const landscape = isLandscape();
-  captureBtn.disabled = uploading || !landscape;
+  captureBtn.disabled = uploading;
   undoBtn.disabled = uploading || photos.length === 0;
   submitBtn.disabled = uploading || photos.length === 0;
 
@@ -121,7 +108,7 @@ function render() {
 }
 
 function setStatusForPhotos() {
-  statusEl.textContent = `${photos.length} landscape photo${photos.length === 1 ? '' : 's'} ready`;
+  statusEl.textContent = `${photos.length} photo${photos.length === 1 ? '' : 's'} ready`;
 }
 
 function addPhoto(blob) {
@@ -167,11 +154,6 @@ function canvasToJpegBlob(targetCanvas = canvas) {
 }
 
 async function captureCameraPhoto() {
-  if (!isLandscape()) {
-    statusEl.textContent = 'Rotate phone sideways before taking photos';
-    return;
-  }
-
   if (!camera.videoWidth || !camera.videoHeight) {
     statusEl.textContent = 'Camera is not ready yet';
     return;
@@ -217,25 +199,6 @@ captureBtn.addEventListener('click', async () => {
     await captureCameraPhoto();
   } catch (error) {
     statusEl.textContent = error.message;
-  }
-});
-
-fullscreenBtn.addEventListener('click', async () => {
-  try {
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-      await document.documentElement.requestFullscreen();
-    }
-
-    if (screen.orientation?.lock) {
-      await screen.orientation.lock('landscape');
-      statusEl.textContent = 'Landscape mode active';
-    } else {
-      statusEl.textContent = 'Rotate phone sideways for landscape mode';
-    }
-  } catch {
-    statusEl.textContent = 'Rotate phone sideways for landscape mode';
-  } finally {
-    updateOrientationState();
   }
 });
 
@@ -320,11 +283,6 @@ overrideBtn.addEventListener('click', async () => {
   statusEl.textContent = `Next locator set to ${currentLocator}`;
   render();
 });
-
-window.addEventListener('orientationchange', () => {
-  setTimeout(updateOrientationState, 250);
-});
-window.addEventListener('resize', updateOrientationState);
 
 init().catch((error) => {
   statusEl.textContent = error.message;
