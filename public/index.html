@@ -6,58 +6,48 @@
   <meta name="theme-color" content="#111827" />
   <title>Auction Lot Capture</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles.css?v=5" />
 </head>
 <body>
-  <div id="portraitWarning" class="portrait-warning">
-    Rotate phone sideways for landscape lot photos.
-  </div>
-
   <main class="app">
-    <section class="card header-card">
+    <header class="top-bar">
       <div>
         <p class="eyebrow">Current lot</p>
         <h1 id="locator">Loading...</h1>
       </div>
-      <div class="counter">
+      <div class="count-box">
         <span id="photoCount">0</span>
         <small>photos</small>
       </div>
-    </section>
+      <div id="status" class="status">Starting camera...</div>
+    </header>
 
-    <section class="card camera-card">
+    <section class="camera-panel">
       <video id="camera" autoplay playsinline muted></video>
       <canvas id="canvas" hidden></canvas>
-      <div class="controls">
-        <button id="captureBtn" class="primary">Take Photo</button>
-        <button id="undoBtn" disabled>Undo Last</button>
-        <button id="fullscreenBtn" type="button">Landscape Mode</button>
-      </div>
-      <input id="fileInput" type="file" accept="image/*" capture="environment" multiple />
-      <p class="hint">Hold the phone sideways. Photos are saved as landscape JPGs.</p>
+      <div id="preview" class="preview-strip"></div>
     </section>
 
-    <section class="card preview-card">
-      <div class="preview-header">
-        <strong>Photos for this lot</strong>
-        <span id="status"></span>
-      </div>
-      <div id="preview" class="preview"></div>
-    </section>
-
-    <section class="submit-bar">
+    <section class="action-bar">
+      <button id="captureBtn" class="primary">Take Photo</button>
+      <button id="undoBtn" disabled>Undo</button>
       <button id="submitBtn" class="submit" disabled>Submit Lot</button>
     </section>
 
-    <details class="card settings">
-      <summary>Manual locator override</summary>
-      <p>Use this only if you need to correct the next lot code.</p>
-      <div class="override-row">
-        <input id="overrideInput" placeholder="Example: D42" />
-        <button id="overrideBtn">Set Next</button>
+    <details class="extras">
+      <summary>More options</summary>
+      <div class="extras-grid">
+        <label class="file-picker">
+          Add photos from files
+          <input id="fileInput" type="file" accept="image/*" capture="environment" multiple />
+        </label>
+        <div class="override-row">
+          <input id="overrideInput" placeholder="Set next locator, example D42" />
+          <button id="overrideBtn">Set Next</button>
+        </div>
       </div>
     </details>
   </main>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=5"></script>
 </body>
 </html>
