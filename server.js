@@ -93,6 +93,26 @@ function incrementLetters(letters) {
   return 'A' + chars.join('');
 }
 
+function isInvalidGrant(error) {
+  const text = [
+    error?.message,
+    error?.response?.data?.error,
+    error?.response?.data?.error_description,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return text.includes('invalid_grant');
+}
+
+function makeAuthExpiredError() {
+  const error = new Error('Google Drive authorization expired. Open /auth/google on the Render app, sign in again, copy the new refresh token into GOOGLE_REFRESH_TOKEN in Render, then redeploy.');
+  error.status = 401;
+  return error;
+}
+
+function cleanError(error) {
+  if (isInvalidGrant(error)) return makeAuthExpiredError();
+  return error;
+}
+
 function getRedirectUri(req) {
   if (process.env.GOOGLE_REDIRECT_URI) return process.env.GOOGLE_REDIRECT_URI;
   return `${req.protocol}://${req.get('host')}/oauth2callback`;
@@ -111,7 +131,7 @@ function getOAuthClient(req) {
 
 async function readSavedTokens() {
   if (process.env.GOOGLE_REFRESH_TOKEN) {
-    return { refresh_token: process.env.GOOGLE_REFRESH_TOKEN };
+    return { refresh_token: process.env.GOOGLE_REFRESH_TOKEN.trim() };
   }
 
   try {
@@ -136,6 +156,13 @@ async function getDrive(req) {
   }
 
   auth.setCredentials(tokens);
+
+  try {
+    await auth.getAccessToken();
+  } catch (error) {
+    throw cleanError(error);
+  }
+
   return google.drive({ version: 'v3', auth });
 }
 
@@ -293,7 +320,8 @@ app.get('/oauth2callback', async (req, res) => {
       </html>
     `);
   } catch (error) {
-    res.status(500).send(error.message);
+    const clean = cleanError(error);
+    res.status(clean.status || 500).send(clean.message);
   }
 });
 
@@ -303,11 +331,12 @@ app.get('/api/state', async (req, res) => {
     try {
       state = await syncNextLocatorWithDrive(req, state);
     } catch (syncError) {
-      // The capture UI should still load even before Google Drive is authorized.
+      // The capture UI should still load even if Google Drive needs reauthorization.
     }
     res.json({ nextLocator: state.nextLocator, masterFolderId: state.masterFolderId || null });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const clean = cleanError(error);
+    res.status(clean.status || 500).json({ error: clean.message });
   }
 });
 
@@ -323,7 +352,8 @@ app.post('/api/state/next-locator', async (req, res) => {
     await saveState(state);
     res.json({ nextLocator: state.nextLocator });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const clean = cleanError(error);
+    res.status(clean.status || 500).json({ error: clean.message });
   }
 });
 
@@ -365,7 +395,8 @@ app.post('/api/lots', upload.array('photos', 60), async (req, res) => {
       folderUrl: lotFolder.webViewLink,
     });
   } catch (error) {
-    res.status(error.status || 500).json({ error: error.message });
+    const clean = cleanError(error);
+    res.status(clean.status || error.status || 500).json({ error: clean.message });
   }
 });
 
