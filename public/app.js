@@ -11,14 +11,15 @@ const fileInput = document.getElementById('fileInput');
 const overrideInput = document.getElementById('overrideInput');
 const overrideBtn = document.getElementById('overrideBtn');
 
-const JPEG_QUALITY = 0.96;
-const MAX_OUTPUT_WIDTH = 2560;
+const JPEG_QUALITY = 0.88;
+const MAX_OUTPUT_WIDTH = 1600;
 const LANDSCAPE_RATIO = 16 / 9;
 
 let currentLocator = null;
 let photos = [];
 let stream = null;
 let uploading = false;
+let capturing = false;
 
 async function init() {
   await loadState();
@@ -45,8 +46,8 @@ async function startCamera() {
     const preferredConstraints = {
       video: {
         facingMode: { ideal: 'environment' },
-        width: { ideal: 2560 },
-        height: { ideal: 1440 },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
         aspectRatio: { ideal: LANDSCAPE_RATIO },
       },
       audio: false,
@@ -55,8 +56,8 @@ async function startCamera() {
     const fallbackConstraints = {
       video: {
         facingMode: { ideal: 'environment' },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
       },
       audio: false,
     };
@@ -84,9 +85,9 @@ function render() {
   locatorEl.textContent = currentLocator || '—';
   photoCountEl.textContent = photos.length;
 
-  captureBtn.disabled = uploading;
-  undoBtn.disabled = uploading || photos.length === 0;
-  submitBtn.disabled = uploading || photos.length === 0;
+  captureBtn.disabled = uploading || capturing;
+  undoBtn.disabled = uploading || capturing || photos.length === 0;
+  submitBtn.disabled = uploading || capturing || photos.length === 0;
 
   preview.innerHTML = '';
 
@@ -144,6 +145,10 @@ function getOutputSize(sourceWidth, sourceHeight) {
   };
 }
 
+function waitForPaint() {
+  return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
 function canvasToJpegBlob(targetCanvas = canvas) {
   return new Promise((resolve, reject) => {
     targetCanvas.toBlob((blob) => {
@@ -154,24 +159,36 @@ function canvasToJpegBlob(targetCanvas = canvas) {
 }
 
 async function captureCameraPhoto() {
+  if (capturing) return;
+
   if (!camera.videoWidth || !camera.videoHeight) {
     statusEl.textContent = 'Camera is not ready yet';
     return;
   }
 
-  const { sx, sy, sw, sh } = getLandscapeCrop(camera.videoWidth, camera.videoHeight);
-  const output = getOutputSize(sw, sh);
+  capturing = true;
+  statusEl.textContent = 'Capturing...';
+  render();
+  await waitForPaint();
 
-  canvas.width = output.width;
-  canvas.height = output.height;
+  try {
+    const { sx, sy, sw, sh } = getLandscapeCrop(camera.videoWidth, camera.videoHeight);
+    const output = getOutputSize(sw, sh);
 
-  const ctx = canvas.getContext('2d', { alpha: false });
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(camera, sx, sy, sw, sh, 0, 0, output.width, output.height);
+    canvas.width = output.width;
+    canvas.height = output.height;
 
-  const blob = await canvasToJpegBlob(canvas);
-  addPhoto(blob);
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'medium';
+    ctx.drawImage(camera, sx, sy, sw, sh, 0, 0, output.width, output.height);
+
+    const blob = await canvasToJpegBlob(canvas);
+    addPhoto(blob);
+  } finally {
+    capturing = false;
+    render();
+  }
 }
 
 async function normalizeImageFileToLandscape(file) {
@@ -187,7 +204,7 @@ async function normalizeImageFileToLandscape(file) {
 
   const ctx = workCanvas.getContext('2d', { alpha: false });
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = 'medium';
   ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, output.width, output.height);
 
   if (bitmap.close) bitmap.close();
@@ -198,7 +215,9 @@ captureBtn.addEventListener('click', async () => {
   try {
     await captureCameraPhoto();
   } catch (error) {
+    capturing = false;
     statusEl.textContent = error.message;
+    render();
   }
 });
 
